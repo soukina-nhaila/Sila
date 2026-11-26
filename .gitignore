@@ -1,0 +1,17 @@
+.env
+.env.local
+*.pem
+*.key
+node_modules/
+.next/
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+lab_uploads/
+reports/
+*.log
+.idea/
+.vscode/
+!.vscode/extensions.json

@@ -1,0 +1,21 @@
+# ⚠️ LABORATOIRE UNIQUEMENT — NE JAMAIS DÉPLOYER SUR INTERNET ⚠️
+# Lancer depuis la racine :  docker compose -f SECURITY_LAB/vulnerable/docker-compose.vulnerable.yml up --build
+services:
+  mongo:
+    image: mongo:7
+    ports: ["27017:27017"]            # VULN-19 : MongoDB sans authentification, port publié sur toutes les interfaces
+  backend:
+    build: ../../backend              # VULN-19 : conteneur exécuté en root (pas d'USER dans ce service)
+    user: "0:0"
+    privileged: false
+    depends_on: [mongo]
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      JWT_SECRET: secret               # VULN-18 : secret faible codé en dur (fictif)
+      SILA_MODE: vulnerable
+      SILA_ENV: development
+    ports: ["127.0.0.1:8000:8000"]    # liaison locale uniquement pour limiter le risque
+  frontend:
+    build: { context: ../../frontend, args: { NEXT_PUBLIC_API_URL: "http://localhost:8000" } }
+    depends_on: [backend]
+    ports: ["127.0.0.1:3000:3000"]

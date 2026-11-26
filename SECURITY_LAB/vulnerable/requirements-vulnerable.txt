@@ -1,0 +1,6 @@
+# VULN-17 : versions volontairement anciennes, À UTILISER UNIQUEMENT pour montrer un scan (pip-audit / Dependency-Check).
+# Ne pas installer dans l'environnement normal. Les CVE exactes sont à confirmer par l'outil lors de votre scan.
+PyJWT==1.7.1
+python-multipart==0.0.5
+requests==2.19.0
+Jinja2==2.10

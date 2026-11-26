@@ -1,0 +1,114 @@
+apiVersion: v1
+kind: Namespace
+metadata: { name: sila }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: { name: sila-config, namespace: sila }
+data:
+  MONGO_URI: "mongodb://mongo:27017"
+  MONGO_DB: "sila"
+  SILA_MODE: "secure"
+  SILA_ENV: "production"
+  CORS_ORIGINS: "http://sila.local"
+---
+apiVersion: v1
+kind: Secret
+metadata: { name: sila-secret, namespace: sila }
+type: Opaque
+stringData:
+  JWT_SECRET: "REMPLACER-PAR-UN-SECRET-ALEATOIRE-32-CARACTERES"  # exemple : ne pas committer de vraie valeur
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: mongo, namespace: sila }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: mongo } }
+  template:
+    metadata: { labels: { app: mongo } }
+    spec:
+      containers:
+        - name: mongo
+          image: mongo:7
+          ports: [{ containerPort: 27017 }]
+          resources: { requests: { cpu: 100m, memory: 256Mi }, limits: { cpu: 500m, memory: 512Mi } }
+          readinessProbe: { tcpSocket: { port: 27017 }, initialDelaySeconds: 5, periodSeconds: 10 }
+          volumeMounts: [{ name: data, mountPath: /data/db }]
+      volumes: [{ name: data, emptyDir: {} }]   # démo ; utiliser un PVC en vrai
+---
+apiVersion: v1
+kind: Service
+metadata: { name: mongo, namespace: sila }
+spec: { selector: { app: mongo }, ports: [{ port: 27017 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: backend, namespace: sila }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: backend } }
+  template:
+    metadata: { labels: { app: backend } }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 10001 }
+      containers:
+        - name: backend
+          image: sila-backend:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 8000 }]
+          envFrom: [{ configMapRef: { name: sila-config } }, { secretRef: { name: sila-secret } }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: ["ALL"] } }
+          resources: { requests: { cpu: 100m, memory: 128Mi }, limits: { cpu: 500m, memory: 512Mi } }
+          readinessProbe: { httpGet: { path: /api/health, port: 8000 }, initialDelaySeconds: 10, periodSeconds: 10 }
+          livenessProbe: { httpGet: { path: /api/health, port: 8000 }, initialDelaySeconds: 20, periodSeconds: 20 }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: backend, namespace: sila }
+spec: { selector: { app: backend }, ports: [{ port: 8000 }] }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: frontend, namespace: sila }
+spec:
+  replicas: 2
+  selector: { matchLabels: { app: frontend } }
+  template:
+    metadata: { labels: { app: frontend } }
+    spec:
+      securityContext: { runAsNonRoot: true, runAsUser: 1000 }
+      containers:
+        - name: frontend
+          image: sila-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports: [{ containerPort: 3000 }]
+          securityContext: { allowPrivilegeEscalation: false, capabilities: { drop: ["ALL"] } }
+          resources: { requests: { cpu: 100m, memory: 128Mi }, limits: { cpu: 500m, memory: 512Mi } }
+          readinessProbe: { httpGet: { path: /, port: 3000 }, initialDelaySeconds: 10, periodSeconds: 10 }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: frontend, namespace: sila }
+spec: { selector: { app: frontend }, ports: [{ port: 3000 }] }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata: { name: sila, namespace: sila }
+spec:
+  rules:
+    - host: sila.local
+      http:
+        paths:
+          - { path: /api, pathType: Prefix, backend: { service: { name: backend, port: { number: 8000 } } } }
+          - { path: /, pathType: Prefix, backend: { service: { name: frontend, port: { number: 3000 } } } }
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: { name: mongo-only-from-backend, namespace: sila }
+spec:
+  podSelector: { matchLabels: { app: mongo } }
+  policyTypes: [Ingress]
+  ingress:
+    - from: [{ podSelector: { matchLabels: { app: backend } } }]
+      ports: [{ port: 27017 }]

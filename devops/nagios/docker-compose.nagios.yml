@@ -1,0 +1,7 @@
+services:
+  nagios:
+    image: jasonrivers/nagios:latest
+    ports: ["127.0.0.1:8080:80"]
+    volumes:
+      - ./sila.cfg:/opt/nagios/etc/objects/sila.cfg:ro
+    # Ajouter ensuite dans nagios.cfg : cfg_file=/opt/nagios/etc/objects/sila.cfg (voir docs/NAGIOS_GUIDE.md)

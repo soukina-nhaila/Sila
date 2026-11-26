@@ -1,0 +1,12 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+body { background: #FAF8FC; color: #241B2B; }
+@layer components {
+  .btn { @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold transition disabled:opacity-50; }
+  .btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark; }
+  .btn-accent { @apply btn bg-accent text-white hover:opacity-90; }
+  .btn-ghost { @apply btn border border-brand text-brand hover:bg-brand-light; }
+  .input { @apply w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand; }
+  .card { @apply rounded-2xl bg-white shadow-sm border border-brand-light p-4; }
+}

@@ -1,0 +1,43 @@
+# Mode SECURE (par défaut). Lancer :  docker compose up --build
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    ports: ["127.0.0.1:27018:27017"]   # accessible uniquement depuis votre PC (Compass)
+    volumes: [mongo_data:/data/db]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    deploy: { resources: { limits: { memory: 512m } } }
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on: { mongo: { condition: service_healthy } }
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      MONGO_DB: sila
+      JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-please-32chars}
+      SILA_MODE: secure
+      SILA_ENV: ${SILA_ENV:-development}
+      CORS_ORIGINS: http://localhost:3000
+    ports: ["8000:8000"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    deploy: { resources: { limits: { memory: 512m, cpus: "1.0" } } }
+
+  frontend:
+    build:
+      context: ./frontend
+      args: { NEXT_PUBLIC_API_URL: http://localhost:8000 }
+    restart: unless-stopped
+    depends_on: [backend]
+    ports: ["3000:3000"]
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    deploy: { resources: { limits: { memory: 512m, cpus: "1.0" } } }
+
+volumes:
+  mongo_data:
