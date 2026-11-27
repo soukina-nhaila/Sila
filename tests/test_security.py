@@ -101,3 +101,34 @@ def test_lab_refuses_production(monkeypatch):
     from app.main import create_app
     with pytest.raises(RuntimeError):
         create_app()
+
+
+# ---------- PRODUCTION ----------
+def test_production_requires_strong_secret(monkeypatch):
+    import pytest
+    from app.main import create_app
+    monkeypatch.setenv("SILA_MODE", "secure")
+    monkeypatch.setenv("SILA_ENV", "production")
+    monkeypatch.setenv("JWT_SECRET", "dev-only-secret-change-me-please-32chars")
+    monkeypatch.setenv("MONGO_URI", "mongodb+srv://u:p@cluster.example.mongodb.net/")
+    with pytest.raises(RuntimeError):
+        create_app()
+    monkeypatch.setenv("JWT_SECRET", "x" * 40)
+    monkeypatch.setenv("CORS_ORIGINS", "*")
+    with pytest.raises(RuntimeError):
+        create_app()
+    monkeypatch.setenv("CORS_ORIGINS", "https://sila.example")
+    app = create_app()
+    assert app.docs_url is None  # /docs désactivé en production
+
+
+def test_production_seed_creates_no_demo_accounts(monkeypatch):
+    from app import seed, db
+    monkeypatch.setenv("MONGO_URI", "mongomock")
+    monkeypatch.setenv("SILA_ENV", "production")
+    db.reset_client()
+    seed.run()
+    assert db.get_db().users.count_documents({}) == 0
+    assert db.get_db().categories.count_documents({}) > 0
+    monkeypatch.setenv("SILA_ENV", "development")
+    db.reset_client()

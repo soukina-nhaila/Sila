@@ -21,6 +21,7 @@ services:
       MONGO_DB: sila
       JWT_SECRET: ${JWT_SECRET:-dev-only-secret-change-me-please-32chars}
       SILA_MODE: secure
+      SEED_ON_START: "1"   # démo locale seulement
       SILA_ENV: ${SILA_ENV:-development}
       CORS_ORIGINS: http://localhost:3000
     ports: ["8000:8000"]

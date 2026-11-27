@@ -3,7 +3,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { api, mad, getUser } from "@/lib/api";
 import { useFetch } from "@/components/useFetch";
-import { Empty, Loading, ErrorBox } from "@/components/Cards";
+import { toast, cartChanged } from "@/lib/ui";
+import { Empty, GridSkeleton, ErrorBox } from "@/components/Cards";
 
 export default function Cart() {
   const router = useRouter();
@@ -13,12 +14,12 @@ export default function Cart() {
   const [form, setForm] = useState({ line: "", city: "Larache", postal_code: "92000", country: "MA", shipping: "standard", pay: "COD", last4: "4242", coupon: "" });
   const [msg, setMsg] = useState("");
   if (!signed) return <Empty text="Connectez-vous pour voir votre panier." />;
-  if (loading) return <Loading />;
+  if (loading) return <GridSkeleton n={3} h="h-24" />;
   if (error) return <ErrorBox msg={error} />;
   const want = kind === "marketplace" ? "product" : "meal";
   const rows = data.items.map((it: any, index: number) => ({ ...it, index })).filter((it: any) => it.kind === want);
   const sub = rows.reduce((s: number, r: any) => s + r.unit_price * r.qty, 0);
-  const setQty = async (i: number, qty: number) => { await api(`/api/cart/${i}`, { method: "PUT", body: { qty } }); reload(); };
+  const setQty = async (i: number, qty: number) => { await api(`/api/cart/${i}`, { method: "PUT", body: { qty } }); cartChanged(); reload(); };
   const checkout = async () => {
     setMsg("");
     try {
@@ -26,18 +27,18 @@ export default function Cart() {
       if (form.pay === "CARD_SIMULATED") body.card_last4 = form.last4;
       if (form.coupon) body.coupon = form.coupon;
       await api("/api/orders/checkout", { method: "POST", body });
-      router.push("/orders");
+      toast("✅ Commande passée !"); cartChanged(); router.push("/orders");
     } catch (e: any) { setMsg("⚠️ " + e.message); }
   };
   const f = (k: string) => ({ value: (form as any)[k], onChange: (e: any) => setForm({ ...form, [k]: e.target.value }) });
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Mon panier</h1>
+      <h1 className="section-title">Mon panier</h1>
       <div className="flex gap-2">
         <button className={kind === "marketplace" ? "btn-primary" : "btn-ghost"} onClick={() => setKind("marketplace")}>🛍️ Boutique</button>
         <button className={kind === "food" ? "btn-primary" : "btn-ghost"} onClick={() => setKind("food")}>🍽️ Repas</button>
       </div>
-      {rows.length === 0 ? <Empty text="Ce panier est vide." /> : (
+      {rows.length === 0 ? <Empty text="Ce panier est vide. Ajoutez des articles pour commencer." /> : (
         <div className="grid md:grid-cols-[1fr_340px] gap-6">
           <div className="space-y-2">
             {rows.map((r: any) => (
@@ -50,7 +51,7 @@ export default function Cart() {
             ))}
             <p className="text-right font-bold">Sous-total : {mad(sub)}</p>
           </div>
-          <div className="card space-y-2 h-fit">
+          <div className="card space-y-3 h-fit lg:sticky lg:top-36">
             <h2 className="font-bold">Livraison & paiement</h2>
             <input className="input" placeholder="Adresse" {...f("line")} />
             <div className="flex gap-2"><input className="input" placeholder="Ville" {...f("city")} /><input className="input w-24" placeholder="CP" {...f("postal_code")} /></div>

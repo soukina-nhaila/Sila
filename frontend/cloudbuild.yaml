@@ -1,0 +1,8 @@
+# Utilisé par : gcloud builds submit frontend --config frontend/cloudbuild.yaml --substitutions=_IMAGE=...,_API_URL=...
+steps:
+  - name: gcr.io/cloud-builders/docker
+    args: ["build", "-t", "${_IMAGE}", "--build-arg", "NEXT_PUBLIC_API_URL=${_API_URL}", "."]
+images: ["${_IMAGE}"]
+substitutions:
+  _IMAGE: ""
+  _API_URL: ""

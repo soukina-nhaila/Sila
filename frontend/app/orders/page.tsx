@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { api, mad, getUser } from "@/lib/api";
 import { useFetch } from "@/components/useFetch";
-import { Empty, Loading, ErrorBox } from "@/components/Cards";
+import { Empty, GridSkeleton, ErrorBox } from "@/components/Cards";
 
 const FOOD = ["PENDING", "CONFIRMED", "PREPARING", "READY_FOR_PICKUP", "PICKED_UP", "DELIVERED"];
 const SHOP = ["PENDING", "CONFIRMED", "SHIPPED", "DELIVERED"];
@@ -12,12 +12,12 @@ export default function Orders() {
   const { data, loading, error, reload } = useFetch<any[]>(signed ? "/api/orders" : null);
   const [msg, setMsg] = useState("");
   if (!signed) return <Empty text="Connectez-vous pour voir vos commandes." />;
-  if (loading) return <Loading />;
+  if (loading) return <GridSkeleton n={3} h="h-24" />;
   if (error) return <ErrorBox msg={error} />;
   const act = async (fn: () => Promise<any>) => { try { await fn(); setMsg(""); reload(); } catch (e: any) { setMsg("⚠️ " + e.message); } };
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Mes commandes</h1>
+      <h1 className="section-title">Mes commandes</h1>
       {msg && <ErrorBox msg={msg} />}
       {data!.length === 0 && <Empty text="Aucune commande pour le moment." />}
       {data!.map((o) => {

@@ -8,16 +8,26 @@ from .db import ensure_indexes
 
 def create_app() -> FastAPI:
     mode = os.getenv("SILA_MODE", "secure").lower()
-    if mode == "vulnerable" and os.getenv("SILA_ENV", "development").lower() == "production":
+    prod = os.getenv("SILA_ENV", "development").lower() == "production"
+    if mode == "vulnerable" and prod:
         raise RuntimeError("Le mode vulnérable est interdit en production.")
+    if prod:  # garde-fous : refuse de démarrer avec une configuration dangereuse
+        js = os.getenv("JWT_SECRET", "")
+        if len(js) < 32 or js.startswith(("dev-only", "CHANGEZ", "REMPLACER")):
+            raise RuntimeError("Production : JWT_SECRET fort (32+ caractères aléatoires) obligatoire.")
+        if os.getenv("MONGO_URI", "mongomock") in ("mongomock", "mongodb://localhost:27017"):
+            raise RuntimeError("Production : MONGO_URI doit pointer vers une vraie base (Atlas).")
+        if "*" in os.getenv("CORS_ORIGINS", ""):
+            raise RuntimeError("Production : CORS_ORIGINS ne doit pas contenir '*'.")
 
     @asynccontextmanager
     async def lifespan(_app):
         ensure_indexes()
         yield
 
-    app = FastAPI(title="SILA API", version="1.0.0", lifespan=lifespan,
-                  description=f"Mode actuel : {mode.upper()}")
+    docs = not prod or os.getenv("ENABLE_DOCS") == "1"
+    app = FastAPI(title="SILA API", version="1.0.0", lifespan=lifespan, description=f"Mode actuel : {mode.upper()}",
+                  docs_url="/docs" if docs else None, redoc_url=None, openapi_url="/openapi.json" if docs else None)
 
     if mode == "vulnerable":  # VULN-15 : CORS trop permissif
         app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
@@ -32,6 +42,8 @@ def create_app() -> FastAPI:
             resp.headers["X-Content-Type-Options"] = "nosniff"
             resp.headers["X-Frame-Options"] = "DENY"
             resp.headers["Referrer-Policy"] = "no-referrer"
+            if prod:
+                resp.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
             resp.headers["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'" if not request.url.path.startswith(("/docs", "/redoc", "/openapi")) else "default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net data:"
             return resp
 

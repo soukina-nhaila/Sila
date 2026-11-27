@@ -1,12 +1,19 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-body { background: #FAF8FC; color: #241B2B; }
+
+html { scroll-behavior: smooth; }
+body { background: #FAF8FC; color: #241B2B; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { letter-spacing: -0.01em; }
+
 @layer components {
-  .btn { @apply inline-flex items-center justify-center rounded-lg px-4 py-2 font-semibold transition disabled:opacity-50; }
-  .btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark; }
-  .btn-accent { @apply btn bg-accent text-white hover:opacity-90; }
-  .btn-ghost { @apply btn border border-brand text-brand hover:bg-brand-light; }
-  .input { @apply w-full rounded-lg border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand; }
-  .card { @apply rounded-2xl bg-white shadow-sm border border-brand-light p-4; }
+  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 font-semibold transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[.98]; }
+  .btn-primary { @apply btn bg-brand text-white shadow-card hover:bg-brand-dark hover:shadow-lift; }
+  .btn-accent { @apply btn bg-accent text-white shadow-[0_8px_20px_-8px_rgba(242,140,69,.8)] hover:brightness-110; }
+  .btn-gold { @apply btn bg-gradient-to-r from-gold to-gold-champagne text-brand-dark shadow-gold hover:brightness-105; }
+  .btn-ghost { @apply btn border border-brand/25 text-brand bg-white hover:bg-brand-light; }
+  .input { @apply w-full rounded-xl border border-brand/15 bg-white px-4 py-2.5 text-ink placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand; }
+  .card { @apply rounded-2xl bg-white shadow-card border border-black/5 p-5; }
+  .chip { @apply inline-flex items-center gap-1 rounded-full bg-brand-light px-3 py-1 text-xs font-semibold text-brand; }
+  .section-title { @apply font-display text-2xl md:text-3xl font-bold text-brand-dark; }
 }

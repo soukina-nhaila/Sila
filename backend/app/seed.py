@@ -1,4 +1,5 @@
 """Seed répétable (idempotent) : python -m app.seed"""
+import os
 import random
 import secrets
 from .db import get_db, ensure_indexes
@@ -65,6 +66,12 @@ def run():
     random.seed(42)
     ensure_indexes()
     db = get_db()
+    if os.getenv("SILA_ENV", "development").lower() == "production":
+        # Production : jamais de comptes de démo avec mot de passe connu.
+        for slug, name, emoji in CATEGORIES:
+            db.categories.update_one({"slug": slug}, {"$setOnInsert": {"name": name, "emoji": emoji}}, upsert=True)
+        print("Production : seules les catégories ont été créées. Créez l'admin avec : python -m app.create_admin")
+        return
     ids = {}
     for email, name, role in USERS:
         u = db.users.find_one({"email": email})

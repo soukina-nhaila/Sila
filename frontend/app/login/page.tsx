@@ -7,8 +7,9 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { api, saveSession } from "@/lib/api";
 import { ErrorBox } from "@/components/Cards";
+import AuthShell from "@/components/AuthShell";
 
-const schema = z.object({ email: z.string().email("Email invalide"), password: z.string().min(1, "Requis") });
+const schema = z.object({ email: z.string().email("Email invalide"), password: z.string().min(1, "Mot de passe requis") });
 type F = z.infer<typeof schema>;
 
 export default function Login() {
@@ -20,14 +21,14 @@ export default function Login() {
     catch (e: any) { setErr(e.message); }
   };
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="card max-w-md mx-auto space-y-3">
-      <h1 className="text-xl font-bold">Connexion</h1>
-      {err && <ErrorBox msg={err} />}
-      <div><input className="input" placeholder="Email" {...register("email")} />{errors.email && <p className="text-xs text-red-600">{errors.email.message}</p>}</div>
-      <div><input className="input" type="password" placeholder="Mot de passe" {...register("password")} /></div>
-      <button className="btn-primary w-full" disabled={isSubmitting}>Se connecter</button>
-      <p className="text-sm">Pas de compte ? <Link href="/register" className="text-brand underline">Inscription</Link></p>
-      <p className="text-xs text-gray-500">Comptes de démo : customer@sila.test, seller@sila.test, owner@sila.test, courier@sila.test, admin@sila.test — mot de passe <code>Sila@2026</code></p>
-    </form>
+    <AuthShell title="Bon retour 👋" subtitle="Connectez-vous pour commander et suivre vos livraisons.">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {err && <ErrorBox msg={err} />}
+        <div><label className="text-sm font-semibold">Email</label><input className="input mt-1" autoComplete="email" {...register("email")} />{errors.email && <p className="text-xs text-red-600 mt-1">{errors.email.message}</p>}</div>
+        <div><label className="text-sm font-semibold">Mot de passe</label><input className="input mt-1" type="password" autoComplete="current-password" {...register("password")} />{errors.password && <p className="text-xs text-red-600 mt-1">{errors.password.message}</p>}</div>
+        <button className="btn-primary w-full !py-3" disabled={isSubmitting}>{isSubmitting ? "Connexion…" : "Se connecter"}</button>
+        <p className="text-sm text-center">Nouveau sur SILA ? <Link href="/register" className="text-brand font-semibold underline">Créer un compte</Link></p>
+      </form>
+    </AuthShell>
   );
 }

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { api, mad, getUser } from "@/lib/api";
 import { useFetch } from "@/components/useFetch";
-import { Empty, Loading, ErrorBox } from "@/components/Cards";
+import { Empty, GridSkeleton, ErrorBox } from "@/components/Cards";
 
 function OrderActions({ role, o, reload }: { role: string; o: any; reload: () => void }) {
   const nextFood: Record<string, string> = { PENDING: "CONFIRMED", CONFIRMED: "PREPARING", PREPARING: "READY_FOR_PICKUP", PICKED_UP: "DELIVERED" };
@@ -22,7 +22,7 @@ function OrderActions({ role, o, reload }: { role: string; o: any; reload: () =>
 
 function Orders({ role }: { role: string }) {
   const { data, loading, error, reload } = useFetch<any[]>("/api/orders");
-  if (loading) return <Loading />;
+  if (loading) return <GridSkeleton n={3} h="h-24" />;
   if (error) return <ErrorBox msg={error} />;
   return <div className="space-y-2">{data!.length === 0 ? <Empty text="Aucune commande." /> : data!.map((o) => (
     <div key={o.id} className="card flex justify-between flex-wrap gap-2 items-center">
@@ -95,7 +95,7 @@ export default function Dashboard() {
   if (!u) return <Empty text="Connectez-vous pour accéder à votre espace." />;
   return (
     <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Espace {u.role.replace("_", " ").toLowerCase()} — {u.name}</h1>
+      <h1 className="section-title">Espace {u.role.replace("_", " ").toLowerCase()} — {u.name}</h1>
       {u.role === "SELLER" && <Seller />}
       {u.role === "RESTAURANT_OWNER" && <Owner />}
       {u.role === "COURIER" && <Courier />}

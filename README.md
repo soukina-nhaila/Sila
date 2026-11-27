@@ -4,7 +4,8 @@
 
 SILA est une plateforme **marketplace multi-vendeurs + livraison de repas**, avec un **laboratoire DevSecOps** (mode vulnérable / mode sécurisé). Projet académique.
 
-> ➡️ **Pour démarrer : lisez [`INSTALLATION.md`](INSTALLATION.md).**
+> ➡️ **Pour démarrer en local : [`INSTALLATION.md`](INSTALLATION.md).**  
+> ➡️ **Pour publier en ligne : [`docs/DEPLOIEMENT_GOOGLE_CLOUD.md`](docs/DEPLOIEMENT_GOOGLE_CLOUD.md)** (mode sécurisé uniquement).
 
 ## Fonctionnalités implémentées
 - Authentification JWT, mots de passe hachés (bcrypt), 5 rôles (CUSTOMER, SELLER, RESTAURANT_OWNER, COURIER, ADMIN), adresses, réinitialisation de mot de passe (démo).
